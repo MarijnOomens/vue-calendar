@@ -3,7 +3,7 @@
     <v-col>
       <v-sheet height="64">
         <v-toolbar flat color="white">
-          <v-btn color="primary" class="mr-4" @click="setToday" dark>New event</v-btn>
+          <v-btn color="primary" class="mr-4" @click="dialog = true" dark>New event</v-btn>
           <v-btn outlined class="mr-4" @click="setToday">Today</v-btn>
           <v-btn fab text small @click="prev">
             <v-icon small>mdi-chevron-left</v-icon>
@@ -37,6 +37,25 @@
           </v-menu>
         </v-toolbar>
       </v-sheet>
+
+      <!-- Add event modal -->
+      <v-dialog v-model="dialog" max-width="500">
+        <v-card>
+          <v-container>
+            <v-form @submit.prevent="addEvent">
+              <v-text-field v-model="name" type="text" label="event name (required)"></v-text-field>
+              <v-text-field v-model="details" type="text" label="detail"></v-text-field>
+              <v-text-field v-model="start" type="date" label="start (required)"></v-text-field>
+              <v-text-field v-model="end" type="date" label="end (required)"></v-text-field>
+              <v-text-field v-model="color" type="color" label="color (click to open color menu)"></v-text-field>
+              <v-btn type="submit" color="primary" class="mr-4" @click.stop="dialog = false">
+                Create event
+              </v-btn>
+            </v-form>
+          </v-container>
+        </v-card>
+      </v-dialog>
+
       <v-sheet height="600">
         <v-calendar
           ref="calendar"
@@ -61,7 +80,7 @@
           <v-card color="grey lighten-4" min-width="350px" flat>
             <v-toolbar :color="selectedEvent.color" dark>
               <v-btn @click="deleteEvent(selectedEvent.id)" icon>
-                <v-icon>mdi-pencil</v-icon>
+                <v-icon>mdi-delete</v-icon>
               </v-btn>
               <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>
               <v-spacer></v-spacer>
@@ -166,9 +185,28 @@ export default {
         let appData = doc.data();
         appData.id = doc.id;
         events.push(appData);
-        console.log(appData);
       });
       this.events = events;
+    },
+    async addEvent() {
+      console.log('added');
+      if (this.name && this.start && this.end) {
+        await db.collection('calendarEvent').add({
+          name: this.name,
+          details: this.details,
+          start: this.start,
+          end: this.end,
+          color: this.color
+        });
+        this.getEvents();
+        this.name = '';
+        this.details = '';
+        this.start = '';
+        this.end = '';
+        this.color = '';
+      } else {
+        alert('Name, start date and end date must be specified!');
+      }
     },
     async updateEvent(event) {
       await db
